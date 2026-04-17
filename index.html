@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aerogulf Smart ERP Checklist</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:#003399; --navy2:#002266; --red:#cc2200;
+  --green:#1a7a3a; --green2:#e8f5ed;
+  --amber:#b35c00; --amber2:#fff8e6;
+  --gray0:#f8fafc; --gray1:#f1f5f9; --gray2:#e2e8f0;
+  --gray3:#cbd5e1; --gray5:#64748b; --gray7:#334155; --gray9:#0f172a;
+  --white:#ffffff; --radius:8px;
+}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--gray9);background:var(--gray0);}
+#login-screen{position:fixed;inset:0;background:var(--gray1);display:flex;align-items:center;justify-content:center;z-index:100;}
+#login-screen.hidden{display:none;}
+.login-card{background:var(--white);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.14);width:100%;max-width:420px;overflow:hidden;}
+.login-head{background:var(--navy);padding:28px 32px;text-align:center;color:#fff;}
+.login-logo{font-size:26px;font-weight:700;letter-spacing:-1px;}
+.login-logo span{color:#ff6666;}
+.login-sub{color:#a8c0ff;font-size:12px;margin-top:4px;}
+.login-alert{background:#fff8e6;border-bottom:1px solid #f0d080;padding:9px 20px;font-size:12px;color:#7a5500;text-align:center;line-height:1.5;}
+.login-body{padding:22px 32px 28px;}
+label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-bottom:5px;display:block;}
+.field-input,.field-select{width:100%;padding:10px 12px;border:1px solid var(--gray2);border-radius:var(--radius);font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;background:var(--white);color:var(--gray9);}
+.field-input:focus,.field-select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,51,153,.1);}
+.field-group{margin-bottom:14px;}
+.btn-primary{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;transition:background .2s;}
+.btn-primary:hover{background:var(--navy2);}
+.err-box{color:#cc2200;font-size:12px;margin-bottom:10px;padding:8px 10px;background:#fff0ee;border-radius:6px;border:1px solid #ffcccc;display:none;}
+.login-note{text-align:center;font-size:11px;color:var(--gray5);margin-top:12px;line-height:1.5;}
+#app{display:flex;height:100vh;overflow:hidden;}
+#app.hidden{display:none;}
+#sidebar{width:264px;background:var(--white);border-right:1px solid var(--gray2);display:flex;flex-direction:column;height:100%;flex-shrink:0;overflow:hidden;}
+.sb-logo{padding:13px 16px 11px;border-bottom:1px solid var(--gray2);flex-shrink:0;}
+.sb-logo .logo{font-size:18px;font-weight:700;color:var(--navy);}
+.sb-logo .logo span{color:var(--red);}
+.sb-logo .sub{font-size:9px;color:var(--gray5);letter-spacing:.12em;text-transform:uppercase;text-align:right;}
+.sb-nav{flex:1;overflow-y:auto;padding:8px;}
+.sb-nav::-webkit-scrollbar{width:4px;}
+.sb-nav::-webkit-scrollbar-thumb{background:var(--gray2);border-radius:4px;}
+.cat-block{border:1px solid var(--gray2);border-radius:var(--radius);overflow:hidden;margin-bottom:6px;}
+.cat-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 10px;font-size:11px;font-weight:700;cursor:pointer;border:none;background:none;text-align:left;color:var(--gray7);transition:background .15s;}
+.cat-btn.open{color:var(--red);background:#fff5f5;}
+.cat-btn:hover:not(.open){background:var(--gray1);}
+.cat-chevron{transition:transform .2s;font-size:10px;}
+.cat-btn.open .cat-chevron{transform:rotate(180deg);}
+.cat-roles{display:none;}
+.cat-roles.open{display:block;}
+.role-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;font-size:12px;cursor:pointer;border:none;background:none;text-align:left;border-top:1px solid var(--gray1);border-left:3px solid transparent;color:var(--gray7);transition:all .15s;}
+.role-btn:hover{background:var(--gray1);}
+.role-btn.active{background:#eef3ff;border-left-color:var(--navy);color:var(--navy);}
+.role-badge{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--gray2);color:var(--gray5);white-space:nowrap;flex-shrink:0;}
+.role-btn.active .role-badge{background:#c7d8ff;color:var(--navy);}
+.role-badge.submitted{background:#c8e6c9;color:#1b5e20;border:1px solid #a5d6a7;}
+.res-sec{padding:10px 8px 0;}
+.res-label{font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.1em;padding:0 2px 6px;}
+.res-btn{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--gray2);border-radius:var(--radius);background:var(--white);font-size:12px;color:var(--gray7);cursor:pointer;margin-bottom:5px;transition:background .15s;}
+.res-btn:hover{background:var(--gray1);}
+.res-btn.red{background:#cc2200;color:#fff;border-color:#cc2200;font-weight:700;}
+.res-btn.red:hover{background:#aa1800;}
+.sb-foot{padding:12px 14px;border-top:1px solid var(--gray2);background:var(--gray1);flex-shrink:0;}
+.foot-lbl{font-size:10px;color:var(--gray5);margin-bottom:1px;}
+.foot-name{font-weight:700;font-size:13px;color:var(--gray9);}
+.foot-role{font-size:11px;color:var(--gray5);margin-bottom:8px;}
+.foot-out{font-size:11px;color:var(--navy);cursor:pointer;font-weight:600;background:none;border:none;padding:0;text-align:left;}
+.foot-out:hover{text-decoration:underline;}
+.foot-copy{font-size:9px;color:var(--gray3);margin-top:10px;line-height:1.5;}
+#sync-status{font-size:11px;padding:4px 10px;background:var(--gray1);border-bottom:1px solid var(--gray2);display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--gray3);flex-shrink:0;}
+.sync-dot.ok{background:#22c55e;}
+.sync-dot.busy{background:#f59e0b;animation:blink .7s ease-in-out infinite;}
+.sync-dot.err{background:#ef4444;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOPBAR with submit button */
+#topbar{height:52px;background:var(--white);border-bottom:1px solid var(--gray2);display:flex;align-items:center;padding:0 16px 0 20px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.06);gap:10px;}
+#topbar-title{font-size:15px;font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap;}
+.pill.zero{background:var(--gray1);color:var(--gray5);}
+.pill.partial{background:#ddeeff;color:var(--navy);}
+.pill.done{background:var(--green2);color:var(--green);}
+
+/* SUBMIT BUTTON */
+#submit-btn{
+  display:none;
+  align-items:center;
+  gap:7px;
+  padding:7px 18px;
+  background:var(--gray1);
+  color:var(--gray5);
+  border:2px solid var(--gray3);
+  border-radius:var(--radius);
+  font-size:12px;
+  font-weight:700;
+  cursor:not-allowed;
+  white-space:nowrap;
+  opacity:.5;
+  transition:all .25s;
+  letter-spacing:.2px;
+  font-family:'Segoe UI',system-ui,sans-serif;
+}
+#submit-btn.active{
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+  cursor:pointer;
+  opacity:1;
+  box-shadow:0 2px 12px rgba(26,122,58,.4);
+}
+#submit-btn.active:hover{
+  background:#145c28;
+  border-color:#145c28;
+  transform:translateY(-1px);
+  box-shadow:0 4px 16px rgba(26,122,58,.45);
+}
+#submit-btn.submitted-state{
+  background:#c8e6c9;
+  color:#1b5e20;
+  border-color:#a5d6a7;
+  cursor:default;
+  opacity:1;
+  box-shadow:none;
+}
+.submit-pulse{
+  width:8px;height:8px;border-radius:50%;
+  background:currentColor;
+  flex-shrink:0;
+}
+#submit-btn.active .submit-pulse{
+  animation:pulse-dot 1.4s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.55);}}
+
+#pbar-wrap{height:3px;background:var(--gray2);flex-shrink:0;}
+#pbar{height:100%;width:0%;background:var(--navy);transition:width .4s,background .4s;}
+#content{flex:1;overflow-y:auto;padding:16px 20px;}
+#welcome{height:100%;display:flex;align-items:center;justify-content:center;background:var(--white);border-radius:var(--radius);border:1px solid var(--gray2);}
+.w-inner{text-align:center;max-width:380px;padding:40px 20px;}
+.w-logo{font-size:36px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.w-logo span{color:var(--red);}
+.w-h{font-size:18px;font-weight:700;color:var(--gray9);margin-bottom:8px;}
+.w-p{font-size:13px;color:var(--gray5);margin-bottom:14px;line-height:1.6;}
+.w-note{background:var(--amber2);border:1px solid #f0d080;border-radius:var(--radius);padding:12px 14px;font-size:12px;color:var(--amber);text-align:left;}
+.sbar{display:flex;background:var(--white);border:1px solid var(--gray2);border-radius:var(--radius);padding:8px 14px;font-size:11px;color:var(--gray5);align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px;}
+.sbar-i{display:flex;align-items:center;gap:4px;}
+#sess-status{font-weight:700;}
+#sess-status.done{color:var(--green);}
+#sess-status.wip{color:var(--navy);}
+#sess-status.submitted{color:#1b5e20;background:#c8e6c9;padding:2px 8px;border-radius:4px;}
+.sec-div{font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.12em;border-bottom:1px solid var(--gray2);padding-bottom:4px;margin:16px 0 8px;}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--white);border:1px solid var(--gray2);border-radius:var(--radius);margin-bottom:6px;transition:border-color .15s,background .15s;}
+.task-item.done{background:var(--green2);border-color:#a8d8b8;}
+.task-item:hover:not(.done){border-color:#99b3ff;}
+.task-chk{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--gray3);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px;}
+.task-chk:hover{border-color:var(--navy);}
+.task-item.done .task-chk{background:var(--green);border-color:var(--green);}
+.chk-icon{display:none;color:#fff;font-size:13px;}
+.task-item.done .chk-icon{display:block;}
+.task-body{flex:1;min-width:0;}
+.task-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.task-id{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--gray2);color:var(--gray5);}
+.task-item.done .task-id{background:#c0e8cc;color:var(--green);}
+.task-ts{font-size:10px;color:var(--gray5);}
+.task-txt{font-size:13px;line-height:1.55;color:var(--gray9);}
+.task-item.done .task-txt{color:var(--gray5);text-decoration:line-through;}
+.task-note-show{margin-top:6px;background:#fff8e6;border:1px solid #f0d080;border-radius:4px;padding:4px 8px;font-size:11px;color:#7a5500;cursor:pointer;}
+.note-btn{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--gray3);font-size:16px;padding:2px 4px;transition:color .15s;}
+.note-btn:hover{color:var(--amber);}
+.note-btn.has{color:var(--amber);}
+
+/* Submitted banner inside task list */
+.cl-submitted-banner{background:#e8f5ed;border:2px solid #7bc89a;border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--green);font-weight:600;}
+.cl-submitted-banner .icon{font-size:22px;flex-shrink:0;}
+.cl-submitted-banner .sub{font-size:11px;font-weight:400;color:#2e7d32;margin-top:2px;}
+
+#done-banner{display:none;background:var(--green2);border:2px solid #7bc89a;border-radius:12px;padding:20px;text-align:center;margin-top:10px;}
+#done-banner.show{display:block;}
+#done-banner .icon{font-size:30px;margin-bottom:6px;}
+#done-banner strong{display:block;font-size:16px;font-weight:700;color:var(--green);}
+#done-banner p{font-size:12px;color:var(--green);margin-top:4px;}
+
+/* NOTE MODAL */
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:200;}
+#modal-bg.open{display:flex;}
+.modal{background:var(--white);border-radius:12px;width:100%;max-width:440px;box-shadow:0 16px 60px rgba(0,0,0,.2);overflow:hidden;}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--gray2);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h3{font-size:14px;font-weight:700;color:var(--gray9);}
+.modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:var(--gray5);}
+.modal-body{padding:16px 18px;}
+.modal-body textarea{width:100%;height:100px;padding:10px;font-size:13px;border:1px solid var(--gray2);border-radius:var(--radius);resize:none;outline:none;font-family:inherit;line-height:1.5;}
+.modal-body textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,51,153,.1);}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--gray2);display:flex;gap:8px;}
+.modal-foot .btn-save{flex:1;}
+.btn-cancel{padding:9px 16px;border:1px solid var(--gray2);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;color:var(--gray7);}
+.btn-cancel:hover{background:var(--gray1);}
+
+/* SUBMIT CONFIRM MODAL */
+#submit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:300;}
+#submit-modal-bg.open{display:flex;}
+.submit-modal{background:var(--white);border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 70px rgba(0,0,0,.3);overflow:hidden;}
+.sm-head{background:var(--navy);padding:18px 22px;color:#fff;}
+.sm-head h3{font-size:15px;font-weight:700;}
+.sm-head p{font-size:11px;color:#a8c0ff;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sm-body{padding:18px 22px;}
+.sm-summary{background:var(--gray1);border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+.sm-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--gray2);}
+.sm-row:last-child{border-bottom:none;}
+.sm-row .lbl{color:var(--gray5);}
+.sm-row .val{font-weight:600;color:var(--gray9);}
+.sm-row .val.green{color:var(--green);}
+.sm-row .val.amber{color:var(--amber);}
+.sm-warn{background:#fff8e6;border:1px solid #f0d080;border-radius:6px;padding:10px 12px;font-size:12px;color:#7a5500;margin-bottom:14px;line-height:1.55;}
+.sm-foot{padding:10px 22px 18px;display:flex;gap:8px;}
+.sm-confirm{flex:1;padding:10px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;}
+.sm-confirm:hover{background:#145c28;}
+.sm-cancel{padding:10px 18px;border:1px solid var(--gray2);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;color:var(--gray7);}
+.sm-cancel:hover{background:var(--gray1);}
+
+/* LOG PANEL */
+#log-panel{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:stretch;justify-content:flex-end;z-index:200;}
+#log-panel.open{display:flex;}
+.log-drawer{background:var(--white);width:440px;max-width:100%;display:flex;flex-direction:column;box-shadow:-4px 0 30px rgba(0,0,0,.15);}
+.log-head{background:var(--navy);padding:14px 16px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.log-head h3{font-size:14px;font-weight:700;}
+.log-x{background:none;border:none;color:#a8c0ff;font-size:20px;cursor:pointer;}
+#log-entries{flex:1;overflow-y:auto;padding:10px;}
+.log-entry{background:var(--gray1);border:1px solid var(--gray2);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;}
+.log-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.log-pill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;}
+.log-pill.complete{background:#c0e8cc;color:var(--green);}
+.log-pill.undo{background:#fff0c0;color:var(--amber);}
+.log-pill.start{background:#dde8ff;color:var(--navy);}
+.log-pill.note{background:#fff8e6;color:#7a5500;}
+.log-pill.login{background:var(--gray2);color:var(--gray5);}
+.log-pill.submit{background:#1a7a3a;color:#fff;}
+.log-ts{color:var(--gray5);}
+.log-det{color:var(--gray7);line-height:1.4;margin-top:2px;}
+.log-emp{color:var(--gray5);margin-top:2px;}
+.log-sheet{font-size:9px;color:#22c55e;margin-top:2px;}
+.log-sheet.local{color:var(--gray3);}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="logo-container" style="text-align: center; margin-bottom: 20px;">
+    <img src="AGS Logo.jpg" alt="AeroGulf Logo" style="max-height: 80px;">
+</div>
+      <div class="login-sub">Emergency Response Plan · Smart Checklist</div>
+    </div>
+    <div class="login-alert">In the event of an ERP activation, your calm and deliberate actions are our greatest asset.</div>
+    <div class="login-body">
+      <div class="field-group">
+        <label class="field-label" for="i-emp">Employee ID</label>
+        <input class="field-input" id="i-emp" type="text" placeholder="e.g. 180" autocomplete="off"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="i-role">Role</label>
+        <select class="field-select" id="i-role">
+          <option value="" disabled selected>Choose your role…</option>
+          <optgroup label="CMC – Primary Members">
+            <option>Accountable Manager</option><option>Safety Manager</option>
+            <option>CMC Duty Officer</option><option>Quality / Compliance Manager</option>
+            <option>Finance Manager</option><option>HR Supervisor / FAP Manager</option>
+            <option>CAMO Manager</option><option>Maintenance Manager</option>
+            <option>Ground Operations Manager / Asst. Security Manager</option>
+            <option>Duty Ops Supervisor / Coordinator</option>
+          </optgroup>
+          <optgroup label="Go Team">
+            <option>Go Team – Flight Operations Manager</option>
+            <option>Go Team – Safety Manager</option>
+            <option>Go Team – Maintenance Manager</option>
+            <option>Go Team – Quality Assurance Manager</option>
+          </optgroup>
+          <optgroup label="Emergency Action Plan (EAP)">
+            <option>EAP – Person Discovering Fire</option>
+            <option>EAP – All Personnel (Fire Alarm)</option>
+            <option>EAP – Fire Marshal</option><option>EAP – Duty Ops Staff</option>
+            <option>EAP – First Aid Responder</option><option>EAP – Spill Responder</option>
+            <option>EAP – Duty Officer (Heli Emergency)</option>
+          </optgroup>
+          <optgroup label="Other"><option>Other / Observer</option></optgroup>
+        </select>
+      </div>
+      <div class="err-box" id="err-box"></div>
+      <button class="btn-primary" onclick="doLogin()">Submit &amp; Continue</button>
+      <p class="login-note">All actions are timestamped and logged to Excel Sheets.<br>Timestamps are stored in UTC and UAE local time (UTC+4).</p>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div id="sidebar">
+    <div class="sb-logo">
+        <div class="logo-container" style="text-align: center; margin-bottom: 20px;">
+    <img src="AGS Logo.jpg" alt="AeroGulf Logo" style="max-height: 80px;">
+</div>
+      <div class="sub">Services</div>
+    </div>
+    <div class="sb-nav" id="sb-nav"></div>
+    <div class="res-sec">
+      <div class="res-label">Resources</div>
+      <button class="res-btn red" onclick="window.open('https://login.live.com','_blank')">📹 EMERGENCY 24/7 CMC</button>
+      <button class="res-btn" onclick="openLog()">📋 Activity Log</button>
+      <button class="res-btn" onclick="openSheetConfig()">⚙️ Sheet Setup</button>
+    </div>
+    <div class="sb-foot">
+      <div class="foot-lbl">Active User:</div>
+      <div class="foot-name" id="foot-name">—</div>
+      <div class="foot-role" id="foot-role">—</div>
+      <button class="foot-out" onclick="doLogout()">↩ Change User / Sign Out</button>
+      <div class="foot-copy">AeroGulf Interactive Compliance<br>© 2026 Aerogulf Services<br>Vercel + Google Sheets Edition</div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <div id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div id="topbar-pill" class="pill zero">—</div>
+        <button id="submit-btn" onclick="openSubmitModal()">
+          <span class="submit-pulse"></span>
+          <span id="submit-label">Submit</span>
+        </button>
+      </div>
+    </div>
+    <div id="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-msg">Not configured — click ⚙️ Sheet Setup in sidebar</span>
+    </div>
+    <div id="pbar-wrap"><div id="pbar"></div></div>
+    <div id="content">
+      <div id="welcome">
+        <div class="w-inner">
+            <div class="logo-container" style="text-align: center; margin-bottom: 20px;">
+    <img src="AGS Logo.jpg" alt="AeroGulf Logo" style="max-height: 80px;">
+</div>
+          <div class="w-h">Welcome to the ERP Manager System</div>
+          <p class="w-p">Hosted on Vercel. Timestamps saved to Excel Sheets. Reporting via Power BI.</p>
+          <div class="w-note">⚠️ Select a checklist from the sidebar to begin. Every action is timestamped and logged.</div>
+        </div>
+      </div>
+      <div id="cl-view" style="display:none">
+        <div class="sbar">
+          <div class="sbar-i">👤 <span id="sbar-emp"></span></div>
+          <div class="sbar-i">🕐 <span id="sbar-start"></span></div>
+          <div class="sbar-i">📂 <span id="sbar-cat"></span></div>
+          <div id="sess-status" class="wip">IN PROGRESS</div>
+        </div>
+        <div id="task-list"></div>
+        <div id="done-banner">
+          <div class="icon">✅</div>
+          <strong>All Tasks Complete!</strong>
+          <p id="done-msg"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE MODAL -->
+<div id="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Add Note</h3>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="modal-ta" placeholder="Enter your observation or note…"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary btn-save" onclick="saveNote()">Save Note</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT CONFIRM MODAL -->
+<div id="submit-modal-bg">
+  <div class="submit-modal">
+    <div class="sm-head">
+      <h3>📋 Submit Checklist</h3>
+      <p id="sm-subtitle">Review progress before submitting</p>
+    </div>
+    <div class="sm-body">
+      <div class="sm-summary" id="sm-summary"></div>
+      <div class="sm-warn" id="sm-warn" style="display:none"></div>
+    </div>
+    <div class="sm-foot">
+      <button class="sm-cancel" onclick="closeSubmitModal()">Cancel</button>
+      <button class="sm-confirm" onclick="confirmSubmit()">✓ Confirm &amp; Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG PANEL -->
+<div id="log-panel">
+  <div class="log-drawer">
+    <div class="log-head">
+      <h3>📋 Activity Log</h3>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="downloadLogExcel()" style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:#ffffff18;border:1px solid #ffffff40;border-radius:6px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#ffffff30'" onmouseout="this.style.background='#ffffff18'">📊 Excel</button>
+        <button class="log-x" onclick="closeLog()">✕</button>
+      </div>
+    </div>
+    <div id="log-entries"><p style="padding:30px;text-align:center;color:#64748b;font-size:13px">No activity yet.</p></div>
+  </div>
+</div>
+
+<script>
+// ── SHEETS CONFIG ──────────────────────────────────────
+let SHEET_URL = localStorage.getItem('erp_sheet_url') || '';
+async function logToSheet(row) {
+  if (!SHEET_URL) return false;
+  setSyncState('busy','Saving to Google Sheets…');
+  try {
+    await fetch(SHEET_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});
+    setSyncState('ok','Saved to Google Sheets ✓'); return true;
+  } catch(e){ setSyncState('err','Sheet save failed — saved locally'); return false; }
+}
+function setSyncState(s,m){ document.getElementById('sync-dot').className='sync-dot '+s; document.getElementById('sync-msg').textContent=m; }
+
+// ── DATA ───────────────────────────────────────────────
+const ERP=[
+  {cat:"ERP - IN-BASE RESPONSE",roles:[
+    {id:"4.2",name:"Initial Accident/Incident Response",tasks:[
+      {id:"4.2-1",t:"Coordinate initial AGS response from Ops Coordinator. Duty Officer to report to Flight Operations Office then proceed to the CMC at DWC Main Base Admin Building."},
+      {id:"4.2-2",t:"Verify the source and nature of the report (e.g., accident, incident, security threat)."},
+      {id:"4.2-3",t:"Open and maintain the EMERGENCY RESPONSE LOG. Record times of all contacts and important operational / technical / HSE events and decisions."},
+      {id:"4.2-4",t:"Record complete incident information: Aircraft Type/Registration, Owner/Operator, Type of Flight, Pilot in Command, Place/Date/Time (UTC), Reference Position, Crew on board, Killed/Injured counts, Nature of incident, Informant details."},
+      {id:"4.2-5",t:"Call Duty Officer, Accountable Manager and Safety Manager. Brief on the situation."},
+      {id:"4.2-6",t:"Await instructions from Duty Officer / Accountable Manager for ERP Activation."},
+      {id:"4.2-7",t:'If instructed to activate call-out: Telephone Crisis Management Team. Transmit the Emergency Alert message.'},
+      {id:"4.2-8",t:"Notify the GCAA duty investigator."},
+      {id:"4.2-9",t:"Notify the DCAA / Airport & UAE Search & Rescue."},
+      {id:"4.2-10",t:"In case of an accident in the Dubai emirate, notify the Dubai Police."},
+      {id:"4.2-11",t:"Notify the aviation authority of any state within which any accident occurred."},
+      {id:"4.2-12",t:"Notify the relevant remote base manager if the flight is transiting to or from his base."},
+      {id:"4.2-13",t:"Verify all CMC members are logged in to the ERP Smart Checklist."},
+      {id:"4.2-14",t:"Compile a crew and passenger list (copy of manifest)."},
+      {id:"4.2-15",t:"Secure and quarantine all documents related to the flight (Flight Plan, Weather, NOTAMs, Weight & Balance)."},
+      {id:"4.2-16",t:"Brief the DUTY OFFICER on arrival."},
+      {id:"4.2-17",t:"Establish and test secure communication channels for the CMC (dedicated phone lines, radios)."},
+      {id:"4.2-18",t:"Restrict physical and network access to the CMC to authorized personnel only."},
+      {id:"4.2-19",t:"Prepare an initial information pack for the Crisis Management Team."},
+      {id:"4.2-20",t:"Continue to log all events and await further instructions from Duty Officer or Accountable Manager."},
+      {id:"4.2-21",t:"Maintain Emergency Response Log — record all actions with timestamps throughout the incident."},
+    ]},
+    {id:"4.3",name:"CMC Duty Officer",tasks:[
+      {id:"4.3-1",t:"Confirm activation of the ERP upon notification of an accident/incident."},
+      {id:"4.3-2",t:"Proceed to Flight Operations Room, then CMC. Confirm all CMC members notified."},
+      {id:"4.3-3",t:"Assume the role of Accountable Manager during his absence."},
+      {id:"4.3-4",t:"Ensure the Crisis Management Center has adequate resources and is functioning."},
+      {id:"4.3-5",t:"Assist Accountable Manager for an initial Press Release."},
+      {id:"4.3-6",t:"Establish a direct liaison link with the Accident/Incident site."},
+      {id:"4.3-7",t:"Obtain initial casualty and damage assessment from onsite authorities."},
+      {id:"4.3-8",t:"If the aircraft is missing or inaccessible, maintain close liaison with ATC and SAR organizations."},
+      {id:"4.3-9",t:"If required, select and brief crews to fly investigators, police or authorised persons to the accident site."},
+      {id:"4.3-10",t:"Compile flight documents for authorities: weather reports, NOTAMs, pre-flight planning, Weight & Balance, fuel planning."},
+      {id:"4.3-11",t:"Compile original crew administrative documents and quarantine all records."},
+      {id:"4.3-12",t:"Support the Safety Manager in conducting the internal safety investigation."},
+      {id:"4.3-13",t:"In liaison with the Accountable Manager, approve the activation of the Business Continuity Plan."},
+      {id:"4.3-14",t:"Coordinate with Ground Ops Manager and prepare the crash kit for transport to the accident/incident site."},
+      {id:"4.3-15",t:"In coordination with the Accountable Manager, terminate the emergency response and deactivate the emergency process."},
+    ]},
+    {id:"4.4",name:"Safety Manager",tasks:[
+      {id:"4.4-1",t:"Log in to ERP Smart Checklist and proceed to the Crisis Management Centre."},
+      {id:"4.4-2",t:"Obtain briefing and ensure appropriate action has been taken."},
+      {id:"4.4-FH",t:"── FIRST HOUR ──",s:true},
+      {id:"4.4-3",t:"Ensure that the GCAA Duty Investigator is notified."},
+      {id:"4.4-4",t:"Carry out the initial briefing in liaison with Duty Officer."},
+      {id:"4.4-5",t:"Collect preliminary information (location, aircraft, crew, pax, time)."},
+      {id:"4.4-OA",t:"── ONGOING ACTION ──",s:true},
+      {id:"4.4-6",t:"Act as the primary focal point for GCAA investigators."},
+      {id:"4.4-7",t:"Arrange site access for GCAA investigators."},
+      {id:"4.4-8",t:"Facilitate crew and staff interviews."},
+      {id:"4.4-9",t:"Secure wreckage and prevent interference."},
+      {id:"4.4-10",t:"Secure all Flight Data Monitoring (FDM) records related to the incident aircraft and crew."},
+      {id:"4.4-11",t:"Initiate internal, non-punitive safety investigation by collecting operational and maintenance data."},
+      {id:"4.4-12",t:"Activate peer support programmes or psychological support."},
+      {id:"4.4-13",t:"Verify that the Go Team and support group members are receiving appropriate support services."},
+      {id:"4.4-14",t:"Propose appropriate personnel to represent the company in the investigation subcommittees."},
+      {id:"4.4-PA",t:"── POST ACCIDENT/INCIDENT ──",s:true},
+      {id:"4.4-15",t:"Ensure aircraft documents are protected and sealed for GCAA AAIS."},
+      {id:"4.4-16",t:"Initiate Safety Risk Assessment and Monitor effectiveness of risk controls."},
+      {id:"4.4-17",t:"Finalise the Internal Safety Investigation Report."},
+      {id:"4.4-18",t:"Issue safety alerts or temporary operational restrictions if required."},
+      {id:"4.4-19",t:"Identify corrective and preventive actions from investigation findings and track."},
+      {id:"4.4-20",t:"Validate effectiveness of completed actions."},
+      {id:"4.4-21",t:"Update the safety risk register and SPIs/targets."},
+      {id:"4.4-22",t:"Review and respond to GCAA AAIS Final Report recommendations."},
+      {id:"4.4-23",t:"Update SMS documentation and ERP based on lessons learned."},
+    ]},
+    {id:"4.5",name:"Quality Manager",tasks:[
+      {id:"4.5-1",t:"Proceed immediately to the Crisis Management Center."},
+      {id:"4.5-2",t:"Obtain briefing and ensure appropriate action has been taken."},
+      {id:"4.5-3",t:"Notify & Liaise with GCAA principal Inspectors / CAA Investigation Team."},
+      {id:"4.5-4",t:"Ensure that all the following documents are quarantined: Flight documents, Crew records, Engineering and technical records, Aircraft and Fuel bowser samples."},
+    ]},
+    {id:"4.6",name:"CAMO Manager",tasks:[
+      {id:"4.6-1",t:"Proceed immediately to the Crisis Management Centre."},
+      {id:"4.6-2",t:"Obtain briefing and ensure appropriate action has been taken."},
+      {id:"4.6-3",t:"Provide technical representation on the Investigation Team."},
+      {id:"4.6-4",t:"Arrange for all Engineering records and Technical Records/data to be impounded, including HUMS and DCU."},
+      {id:"4.6-5",t:"Quarantine relevant fuel samples."},
+      {id:"4.6-6",t:"Quarantine stores issues to the relevant aircraft."},
+      {id:"4.6-7",t:"Have ground staff prepare the crash kit for transport to the Accident/incident site."},
+      {id:"4.6-8",t:"Update Duty Officer on crash kit status."},
+      {id:"4.6-9",t:"Inform all Engineering & ground staff to maintain strict privacy and direct all inquiries to the CMC."},
+      {id:"4.6-10",t:"Liaise with GCAA / Manufacturers regarding technical information about the aircraft."},
+      {id:"4.6-11",t:"Coordinate wreckage removal and recovery, secure CVR and FDR with GCAA and local authorities."},
+      {id:"4.6-12",t:"Arrange for engineering cover for routine responsibilities."},
+    ]},
+    {id:"4.7",name:"Human Resource / Family Assistance Planning",tasks:[
+      {id:"4.7-1",t:"On receipt of notification, contact the Safety Manager and ascertain whether the Company Telephone Enquiry Centre has been activated."},
+      {id:"4.7-2",t:"Go to the Crisis Management Centre."},
+      {id:"4.7-3",t:"Liaise with Safety Manager to ascertain status of victims and employees/pax and crew."},
+      {id:"4.7-4",t:"Obtain list of the victims / Passenger Name List (PNL)."},
+      {id:"4.7-5",t:"Organise Family Assistance Programme if required."},
+      {id:"4.7-6",t:"Hold conference call between all interested parties regarding welfare plans for victims, employees, passengers, crew."},
+      {id:"4.7-7",t:"In liaison with Flight Operations, determine plan of action for crew support."},
+      {id:"4.7-8",t:"Establish the names and addresses of the next-of-kin of all crew and passengers."},
+      {id:"4.7-9",t:"Verify that all victims are receiving appropriate support services."},
+      {id:"4.7-10",t:"Verify that all next of kin are receiving appropriate support services."},
+      {id:"4.7-11",t:"If a Family Assistance Centre is to be opened, ensure the Company supports this centre."},
+      {id:"4.7-12",t:"If there is a requirement to set up or join the JFSOC, determine who will act on behalf of Aerogulf and deploy."},
+      {id:"4.7-13",t:"Set up a separate room for control of information regarding victims/passengers and employees/crew and their families."},
+      {id:"4.7-14",t:"Ensure that all records and logs (regarding Special Assistance) are being maintained and controlled."},
+      {id:"4.7-15",t:"Activate the dark website if necessary."},
+    ]},
+    {id:"4.8",name:"Ground Operations",tasks:[
+      {id:"4.8-1",t:"Alert the internal Ground Operations Team."},
+      {id:"4.8-2",t:"Secure the fuel bowser used for the last uplift."},
+      {id:"4.8-3",t:"Handover Fuel Bowser samples to CAMO."},
+      {id:"4.8-4",t:"Handover Aircraft Fuel samples to CAMO."},
+      {id:"4.8-5",t:"Submit Fuel Sample Check documents to CAMO."},
+      {id:"4.8-6",t:"Prepare the Crash box."},
+    ]},
+  ]},
+  {cat:"ERP - AWAY-FROM-BASE RESPONSE",roles:[
+    {id:"5.2",name:"Initial Accident/Incident Response",tasks:[
+      {id:"5.2-1",t:"On being notified of an event, accident or incident involving an Aerogulf Services aircraft, enter all known details."},
+      {id:"5.2-2",t:"Record complete incident information: Aircraft Type/Registration, Operator, Type of Flight, Pilot in Command, Place/Date/Time (UTC)."},
+      {id:"5.2-3",t:"Inform the Dubai main base Ops Co-Ordinator / Duty Officer."},
+      {id:"5.2-4",t:"Inform the Accountable Manager."},
+      {id:"5.2-5",t:"Call-out local standby crews for possible response."},
+      {id:"5.2-6",t:"Activate Dubai main base CMC (Crisis Management Center) ASAP."},
+      {id:"5.2-7",t:"Notify the local police – may be handled by CMC Dubai Main Base."},
+      {id:"5.2-8",t:"Notify the GCAA & Local CAA Duty Inspector – may be handled by CMC Dubai Main Base."},
+      {id:"5.2-9",t:"Inform customer of the occurrence/event."},
+      {id:"5.2-10",t:"Quarantine all documents pertaining to the involved aircraft & its flight."},
+      {id:"5.2-11",t:"Notify any relevant remote base manager/airfield ATC."},
+      {id:"5.2-12",t:"Ensure that ACCID signal has been sent to the GCAA."},
+      {id:"5.2-13",t:"Arrange another local aircraft and crew to carry investigation teams to accident site if possible/required."},
+      {id:"5.2-14",t:"Compile a crew and passenger list (copy of manifest)."},
+      {id:"5.2-15",t:"If possible, establish names, telephone numbers and addresses of all legal next of kin for crew and passengers. [Do not contact any]."},
+      {id:"5.2-16",t:"Dubai main base may be tasked with anything that cannot be handled by the AFB team."},
+    ]},
+  ]},
+  {cat:"GO TEAM CHECKLIST",roles:[
+    {id:"6.4",name:"GO TEAM Member Checklist",tasks:[
+      {id:"6.4-1",t:"On arrival to site, contact ERR for an update."},
+      {id:"6.4-2",t:"Establish contact with Police/law enforcement agencies to co-ordinate security needs of families."},
+      {id:"6.4-3",t:"Identify yourself to the On-Scene Commander. Ensure you wear your Aerogulf Services or Airport Identity Card externally."},
+      {id:"6.4-4",t:"Be alert to any post-fire, man-made mineral fibre hazards (Kevlar, etc.) and do not approach the aircraft if such hazard is considered possible."},
+      {id:"6.4-5",t:"Obtain permission from the On-Scene Commander to approach the aircraft: Photograph the scene, ensure required circuit breakers are pulled, remove and quarantine all aircraft documents."},
+      {id:"6.4-6",t:"In coordination with the Authority, assist in securing the Flight Data Recorder, if required."},
+      {id:"6.4-7",t:"If questioned by members of the public or the media, do not engage with them."},
+      {id:"6.4-8",t:"Be prepared to assist accredited accident investigators but beware of press infiltration."},
+      {id:"6.4-9",t:"Co-ordinate security issues with airport / local authorities to ensure accident site is as secure as reasonably practicable."},
+      {id:"6.4-10",t:"Ensure security and safety of personnel or representatives."},
+      {id:"6.4-11",t:"Call and brief the Security Manager if there are any security issues."},
+      {id:"6.4-12",t:"Work with the Incident and CMC team managers and local law enforcement to develop an escort/security plan."},
+      {id:"6.4-13",t:"Ensure security and safety of survivors, friends, and family at family hotel if necessary."},
+    ]},
+    {id:"6.5",name:"GO TEAM – Initial Accident/Incident Response & Log",tasks:[
+      {id:"6.5-1",t:"On being notified of an event, accident or incident involving an Aerogulf Services aircraft, enter all known details."},
+      {id:"6.5-2",t:"Record complete incident information: Aircraft Type/Registration, Owner/Operator, Type of Flight, Pilot in Command, Place/Date/Time (UTC)."},
+      {id:"6.5-3",t:"Notify any relevant remote base manager/airfield ATC if the flight is transiting to or from another base."},
+      {id:"6.5-4",t:"Ensure that ACCID signal has been sent to the GCAA – may be handled by CMC Dubai Main Base."},
+      {id:"6.5-5",t:"Arrange another local aircraft and crew to carry investigation teams to accident site if possible/required."},
+      {id:"6.5-6",t:"Compile a crew and passenger list (copy of manifest)."},
+      {id:"6.5-7",t:"If possible establish names, telephone numbers and addresses of all legal next of kin. [Do not contact any]."},
+      {id:"6.5-8",t:"Dubai main base may be tasked with anything that cannot be handled by the AFB team."},
+    ]},
+  ]},
+  {cat:"EMERGENCY ACTION PLAN (EAP)",roles:[
+    {id:"eap-1",name:"Person Discovering Fire",tasks:[
+      {id:"eap-f-1",t:"Sound the fire alarm immediately."},
+      {id:"eap-f-2",t:"Call emergency services: Fire / Police / Ambulance (999)."},
+      {id:"eap-f-3",t:"Notify the Duty Ops Coordinator / Duty Officer."},
+      {id:"eap-f-4",t:"Attempt to fight the fire ONLY if trained and it is safe to do so — use correct extinguisher."},
+      {id:"eap-f-5",t:"Do not re-enter the building once evacuated."},
+      {id:"eap-f-6",t:"Proceed to the designated Muster Point and report to Fire Marshal."},
+      {id:"eap-f-7",t:"Await clearance from Fire Service before returning to building."},
+    ]},
+    {id:"eap-2",name:"All Personnel (on Fire Alarm)",tasks:[
+      {id:"eap-p-1",t:"On hearing the fire alarm, stop all work immediately."},
+      {id:"eap-p-2",t:"Close windows and doors — do not lock."},
+      {id:"eap-p-3",t:"Leave the building by the nearest safe exit. Do not use lifts."},
+      {id:"eap-p-4",t:"Report to the Muster Point and check in with the Fire Marshal."},
+      {id:"eap-p-5",t:"Do not re-enter the building unless instructed by Fire Marshal or authorities."},
+      {id:"eap-p-6",t:"Account for all visitors and contractors in your area."},
+    ]},
+    {id:"eap-3",name:"Fire Marshal (EAP)",tasks:[
+      {id:"eap-m-1",t:"On hearing the alarm, immediately begin sweep of your designated area."},
+      {id:"eap-m-2",t:"Direct all personnel to the nearest safe exit and to the Muster Point."},
+      {id:"eap-m-3",t:"Check toilets, store rooms, and other enclosed spaces in your zone."},
+      {id:"eap-m-4",t:"Confirm your zone is clear and report to the Chief Fire Marshal."},
+      {id:"eap-m-5",t:"Record names of any missing persons and report to emergency services."},
+    ]},
+    {id:"eap-4",name:"Duty Ops Staff (EAP)",tasks:[
+      {id:"eap-d-1",t:"On notification of alarm, alert Duty Officer and Safety Manager immediately."},
+      {id:"eap-d-2",t:"Contact emergency services (999) and confirm response."},
+      {id:"eap-d-3",t:"Notify all CMC members as required."},
+      {id:"eap-d-4",t:"Maintain communication log of all actions and contacts."},
+      {id:"eap-d-5",t:"Ensure Flight Operations are informed and flight schedules considered."},
+      {id:"eap-d-6",t:"Coordinate with Ground Operations for aircraft/hangar safety."},
+      {id:"eap-d-7",t:"Provide ongoing situation reports to the Duty Officer."},
+      {id:"eap-d-8",t:"Arrange alternative work location if required."},
+      {id:"eap-d-9",t:"Document time of all-clear and any incident report requirements."},
+    ]},
+    {id:"eap-5",name:"First Aid Responder",tasks:[
+      {id:"eap-fa-1",t:"Respond immediately to the scene with first aid kit."},
+      {id:"eap-fa-2",t:"Assess the situation — ensure scene safety before approaching casualty."},
+      {id:"eap-fa-3",t:"Call emergency services (999) if serious injury is suspected."},
+      {id:"eap-fa-4",t:"Administer appropriate first aid within your scope of training."},
+      {id:"eap-fa-5",t:"Stay with the casualty until emergency services arrive."},
+      {id:"eap-fa-6",t:"Handover to emergency services with brief of actions taken."},
+      {id:"eap-fa-7",t:"Complete an incident report form and submit to Safety Manager."},
+    ]},
+    {id:"eap-6",name:"Spill Responder",tasks:[
+      {id:"eap-s-1",t:"Identify the spilled substance and assess hazard level."},
+      {id:"eap-s-2",t:"Cordon off the area and prevent unauthorised access."},
+      {id:"eap-s-3",t:"Notify the Duty Ops Coordinator and Safety Manager."},
+      {id:"eap-s-4",t:"Refer to Safety Data Sheet (SDS) for the substance."},
+      {id:"eap-s-5",t:"Don appropriate PPE before attempting containment."},
+      {id:"eap-s-6",t:"Contain the spill using appropriate spill kit materials."},
+      {id:"eap-s-7",t:"Arrange proper disposal of contaminated materials per environmental regulations."},
+      {id:"eap-s-8",t:"Complete incident report and submit to Safety Manager."},
+    ]},
+    {id:"eap-7",name:"Duty Officer (Heli Emergency)",tasks:[
+      {id:"eap-h-1",t:"Immediately notify Operations and Safety Manager of the helicopter emergency."},
+      {id:"eap-h-2",t:"Alert Aerodrome Fire Service and emergency services as required."},
+      {id:"eap-h-3",t:"Establish communication with the aircraft if possible."},
+      {id:"eap-h-4",t:"Activate ERP and notify all CMC members as per procedure."},
+    ]},
+  ]},
+];
+
+// ── STATE ──────────────────────────────────────────────
+let CU=null, CR=null, CC='', SID='', SS=null;
+let TS={}, AL=[];
+let noteTarget=null;
+let expanded={'ERP - IN-BASE RESPONSE':true};
+let SUBMITTED={};   // keyed by SID
+
+// ── UTILS ──────────────────────────────────────────────
+function fmt(d){return new Date(d).toLocaleString('en-AE',{dateStyle:'short',timeStyle:'medium'});}
+function makeSID(emp,rid){return emp+'_'+rid+'_'+new Date().toISOString().split('T')[0];}
+function saveLocal(){
+  if(!SID)return;
+  localStorage.setItem('erp3_'+SID, JSON.stringify({TS,AL,SS,sub:SUBMITTED[SID]||null}));
+}
+function loadLocal(){
+  const d=SID&&localStorage.getItem('erp3_'+SID);
+  if(d){const p=JSON.parse(d);TS=p.TS||{};AL=p.AL||[];SS=p.SS||null;if(p.sub)SUBMITTED[SID]=p.sub;}
+  else{TS={};AL=[];SS=null;}
+}
+
+// ── SUBMIT BUTTON ──────────────────────────────────────
+function updateSubmitBtn(){
+  const btn=document.getElementById('submit-btn');
+  const lbl=document.getElementById('submit-label');
+  if(!CR){btn.style.display='none';return;}
+  btn.style.display='flex';
+  const all=CR.tasks.filter(t=>!t.s);
+  const doneCount=all.filter(t=>TS[t.id]&&TS[t.id].done).length;
+  const isSubmitted=!!SUBMITTED[SID];
+  if(isSubmitted){
+    btn.className='submitted-state';
+    lbl.textContent='✓ Submitted';
+    btn.onclick=null;
+  } else if(doneCount>0){
+    btn.className='active';
+    lbl.textContent='Submit ('+doneCount+'/'+all.length+')';
+    btn.onclick=openSubmitModal;
+  } else {
+    btn.className='';
+    lbl.textContent='Submit';
+    btn.onclick=null;
+  }
+}
+
+function openSubmitModal(){
+  if(!CR)return;
+  const all=CR.tasks.filter(t=>!t.s);
+  const done=all.filter(t=>TS[t.id]&&TS[t.id].done);
+  const pct=Math.round(done.length/all.length*100);
+  const rem=all.length-done.length;
+  document.getElementById('sm-subtitle').textContent=CR.id+' – '+CR.name;
+  document.getElementById('sm-summary').innerHTML=
+    '<div class="sm-row"><span class="lbl">Checklist</span><span class="val">'+CR.id+' – '+CR.name+'</span></div>'+
+    '<div class="sm-row"><span class="lbl">Employee</span><span class="val">Emp #'+CU.emp+' · '+CU.role+'</span></div>'+
+    '<div class="sm-row"><span class="lbl">Session Started</span><span class="val">'+fmt(SS)+'</span></div>'+
+    '<div class="sm-row"><span class="lbl">Tasks Completed</span><span class="val green">'+done.length+' / '+all.length+' ('+pct+'%)</span></div>'+
+    '<div class="sm-row"><span class="lbl">Remaining Tasks</span><span class="val '+(rem>0?'amber':'green')+'">'+rem+'</span></div>';
+  const warn=document.getElementById('sm-warn');
+  if(rem>0){warn.style.display='block';warn.innerHTML='⚠️ <strong>'+rem+' task'+(rem>1?'s':'')+' not yet completed.</strong> You can still submit — incomplete tasks will be recorded as pending.';}
+  else{warn.style.display='none';}
+  document.getElementById('submit-modal-bg').classList.add('open');
+}
+function closeSubmitModal(){document.getElementById('submit-modal-bg').classList.remove('open');}
+
+async function confirmSubmit(){
+  closeSubmitModal();
+  const all=CR.tasks.filter(t=>!t.s);
+  const done=all.filter(t=>TS[t.id]&&TS[t.id].done);
+  const pct=Math.round(done.length/all.length*100);
+  const now=new Date().toISOString();
+  SUBMITTED[SID]={ts:now,done:done.length,total:all.length,pct};
+  saveLocal();
+  await logEntry('Checklist Submitted',CR.id+' – '+CR.name,
+    'Submitted by Emp #'+CU.emp+' | '+done.length+'/'+all.length+' tasks ('+pct+'%) | Session: '+SID,'');
+  renderChecklist(); buildSidebar();
+}
+
+// ── LOGGING ────────────────────────────────────────────
+async function logEntry(action,task,details,taskId){
+  const now=new Date();
+  const uae=new Date(now.getTime()+4*3600000).toISOString().replace('T',' ').substring(0,19)+' UAE';
+  const row={
+    'Timestamp (UTC)':now.toISOString(),'Timestamp (UAE)':uae,
+    'Action':action,'Role':CU.role,'Task':task||'','Details':details||'',
+    'Employee ID':CU.emp,'Task ID':taskId||'',
+    'Checklist ID':CR?CR.id:'','Checklist Name':CR?CR.name:'','Session ID':SID,
+  };
+  AL.unshift({...row,_local:!SHEET_URL});
+  saveLocal(); renderLog();
+  await logToSheet(row);
+}
+
+// ── LOGIN / LOGOUT ─────────────────────────────────────
+function doLogin(){
+  const emp=document.getElementById('i-emp').value.trim();
+  const role=document.getElementById('i-role').value;
+  const err=document.getElementById('err-box');
+  if(!emp){err.style.display='block';err.textContent='Please enter your Employee ID.';return;}
+  if(!role){err.style.display='block';err.textContent='Please select your Role.';return;}
+  err.style.display='none';
+  CU={emp,role};
+  localStorage.setItem('erp3_user',JSON.stringify(CU));
+  document.getElementById('foot-name').textContent='Employee #'+emp;
+  document.getElementById('foot-role').textContent=role;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  buildSidebar();
+  logEntry('Login','','Employee '+emp+' logged in as '+role,'');
+  updateSyncBanner();
+}
+function doLogout(){
+  CU=null;CR=null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('i-emp').value='';
+  document.getElementById('i-role').value='';
+  showWelcome();
+}
+const _saved=localStorage.getItem('erp3_user');
+if(_saved){CU=JSON.parse(_saved);document.getElementById('i-emp').value=CU.emp;document.getElementById('i-role').value=CU.role;}
+
+// ── SIDEBAR ────────────────────────────────────────────
+function buildSidebar(){
+  const nav=document.getElementById('sb-nav');
+  nav.innerHTML='';
+  ERP.forEach((cat,ci)=>{
+    const open=!!expanded[cat.cat];
+    const b=document.createElement('div');
+    b.className='cat-block';
+    const roles=cat.roles.map((r,ri)=>{
+      const thisSID=CU?makeSID(CU.emp,r.id):'';
+      const isSub=!!(thisSID&&SUBMITTED[thisSID]);
+      const act=CR&&CR.id===r.id;
+      const tot=r.tasks.filter(t=>!t.s).length;
+      let doneCount=0;
+      if(act){doneCount=Object.values(TS).filter(s=>s.done).length;}
+      const badgeCls=isSub?'role-badge submitted':act?'role-badge':'role-badge';
+      const badgeTxt=isSub?'✓ Sent':doneCount+'/'+tot;
+      return '<button class="role-btn'+(act?' active':'')+'" onclick="selRole('+ci+','+ri+')">'+
+        '<span>'+r.id+'. '+r.name+'</span>'+
+        '<span class="'+badgeCls+'">'+badgeTxt+'</span>'+
+        '</button>';
+    }).join('');
+    b.innerHTML='<button class="cat-btn'+(open?' open':'')+'" onclick="toggleCat(\''+cat.cat.replace(/'/g,"\\'")+'\')">'+'<span>'+cat.cat+'</span><span class="cat-chevron">▼</span></button>'+
+      '<div class="cat-roles'+(open?' open':'')+'">'+roles+'</div>';
+    nav.appendChild(b);
+  });
+}
+function toggleCat(n){expanded[n]=!expanded[n];buildSidebar();}
+
+// ── SELECT CHECKLIST ───────────────────────────────────
+async function selRole(ci,ri){
+  CR=ERP[ci].roles[ri]; CC=ERP[ci].cat;
+  SID=makeSID(CU.emp,CR.id);
+  loadLocal();
+  if(!SS)SS=new Date().toISOString();
+  buildSidebar(); renderChecklist();
+  await logEntry('Checklist Started',CR.name,'Session '+SID+' opened','');
+}
+
+function showWelcome(){
+  document.getElementById('welcome').style.display='flex';
+  document.getElementById('cl-view').style.display='none';
+  document.getElementById('topbar-title').textContent='Dashboard';
+  document.getElementById('topbar-pill').textContent='—';
+  document.getElementById('topbar-pill').className='pill zero';
+  document.getElementById('pbar').style.width='0%';
+  document.getElementById('done-banner').classList.remove('show');
+  document.getElementById('submit-btn').style.display='none';
+}
+
+function renderChecklist(){
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('cl-view').style.display='block';
+  document.getElementById('topbar-title').textContent=CR.id+' – '+CR.name;
+  document.getElementById('sbar-emp').textContent='Emp #'+CU.emp+' · '+CU.role;
+  document.getElementById('sbar-start').textContent=fmt(SS);
+  document.getElementById('sbar-cat').textContent=CC;
+
+  const all=CR.tasks.filter(t=>!t.s);
+  const doneCount=all.filter(t=>TS[t.id]&&TS[t.id].done).length;
+  const pct=all.length?Math.round(doneCount/all.length*100):0;
+  const isSubmitted=!!SUBMITTED[SID];
+
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('pbar').style.background=pct===100?'#1a7a3a':pct>0?'#003399':'#e2e8f0';
+  const pill=document.getElementById('topbar-pill');
+  pill.textContent=doneCount+'/'+all.length+' ('+pct+'%)';
+  pill.className='pill '+(pct===100?'done':pct>0?'partial':'zero');
+
+  const st=document.getElementById('sess-status');
+  if(isSubmitted){st.textContent='✓ SUBMITTED';st.className='submitted';}
+  else if(pct===100){st.textContent='✓ COMPLETE';st.className='done';}
+  else{st.textContent='IN PROGRESS – '+pct+'%';st.className='wip';}
+
+  updateSubmitBtn();
+
+  const list=document.getElementById('task-list');
+  list.innerHTML='';
+
+  // Show submitted confirmation banner at top
+  if(isSubmitted){
+    const sub=SUBMITTED[SID];
+    const banner=document.createElement('div');
+    banner.className='cl-submitted-banner';
+    banner.innerHTML='<span class="icon">📋</span><div><div>This checklist has been officially submitted.</div><div class="sub">Submitted at '+fmt(sub.ts)+' &nbsp;·&nbsp; '+sub.done+'/'+sub.total+' tasks completed ('+sub.pct+'%)</div></div>';
+    list.appendChild(banner);
+  }
+
+  CR.tasks.forEach(task=>{
+    if(task.s){
+      const d=document.createElement('div');
+      d.className='sec-div';d.textContent=task.t;
+      list.appendChild(d);return;
+    }
+    const tst=TS[task.id]||{};
+    const div=document.createElement('div');
+    div.className='task-item'+(tst.done?' done':'');
+    div.id='t-'+task.id;
+    div.innerHTML=
+      '<button class="task-chk" onclick="togTask(\''+task.id+'\')"><span class="chk-icon">✓</span></button>'+
+      '<div class="task-body">'+
+        '<div class="task-meta">'+
+          '<span class="task-id">'+task.id+'</span>'+
+          (tst.ts?'<span class="task-ts">✓ '+fmt(tst.ts)+'</span>':'')+
+        '</div>'+
+        '<div class="task-txt">'+task.t+'</div>'+
+        (tst.note?'<div class="task-note-show" onclick="openNote(\''+task.id+'\')">📝 '+tst.note+'</div>':'')+
+      '</div>'+
+      '<button class="note-btn'+(tst.note?' has':'')+'" onclick="openNote(\''+task.id+'\')" title="Add note">📝</button>';
+    list.appendChild(div);
+  });
+
+  const doneBanner=document.getElementById('done-banner');
+  if(pct===100&&!isSubmitted){
+    doneBanner.classList.add('show');
+    document.getElementById('done-msg').textContent='All '+all.length+' tasks completed! Click Submit in the top bar to finalize and log.';
+  } else {doneBanner.classList.remove('show');}
+}
+
+// ── TASK TOGGLE ────────────────────────────────────────
+async function togTask(taskId){
+  if(SUBMITTED[SID])return; // locked after submit
+  const tst=TS[taskId]||{};
+  const nowDone=!tst.done;
+  const ts=nowDone?new Date().toISOString():null;
+  TS[taskId]={...tst,done:nowDone,ts};
+  saveLocal(); renderChecklist(); buildSidebar();
+  const task=CR.tasks.find(t=>t.id===taskId);
+  await logEntry(nowDone?'Task Completed':'Task Undone',
+    '['+taskId+'] '+task.t.substring(0,120),
+    nowDone?'Marked complete at '+fmt(ts):'Marked incomplete',taskId);
+}
+
+// ── NOTES ──────────────────────────────────────────────
+function openNote(tid){
+  noteTarget=tid;
+  const tst=TS[tid]||{};
+  document.getElementById('modal-title').textContent='Note — Task '+tid;
+  document.getElementById('modal-ta').value=tst.note||'';
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');noteTarget=null;}
+async function saveNote(){
+  if(!noteTarget)return;
+  const note=document.getElementById('modal-ta').value.trim();
+  TS[noteTarget]={...(TS[noteTarget]||{}),note};
+  saveLocal();
+  const task=CR.tasks.find(t=>t.id===noteTarget);
+  await logEntry('Note Added','['+noteTarget+'] '+task.t.substring(0,80),note,noteTarget);
+  closeModal(); renderChecklist();
+}
+
+// ── LOG PANEL ──────────────────────────────────────────
+function openLog(){document.getElementById('log-panel').classList.add('open');renderLog();}
+function closeLog(){document.getElementById('log-panel').classList.remove('open');}
+function renderLog(){
+  const c=document.getElementById('log-entries');
+  if(!AL.length){c.innerHTML='<p style="padding:30px;text-align:center;color:#64748b;font-size:13px">No activity yet.</p>';return;}
+  c.innerHTML=AL.map(e=>{
+    const act=(e['Action']||'').toLowerCase();
+    const pill=act.includes('submit')?'submit':act.includes('complet')?'complete':act.includes('undo')?'undo':act.includes('start')?'start':act.includes('note')?'note':'login';
+    return '<div class="log-entry">'+
+      '<div class="log-row"><span class="log-pill '+pill+'">'+e['Action']+'</span><span class="log-ts">'+fmt(e['Timestamp (UTC)'])+'</span></div>'+
+      '<div class="log-det"><strong>'+e['Task']+'</strong>'+(e['Details']?': '+e['Details']:'')+'</div>'+
+      '<div class="log-emp">Emp: '+e['Employee ID']+' · '+e['Role']+'</div>'+
+      '<div class="log-sheet '+(e._local?'local':'')+'">'+( e._local?'⚠ Local only (Sheet not configured)':'✓ Saved to Google Sheets')+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+// ── SHEET CONFIG ───────────────────────────────────────
+function openSheetConfig(){
+  const url=prompt('Paste your Google Apps Script Web App URL.\n\nFormat: https://script.google.com/macros/s/.../exec',SHEET_URL);
+  if(url===null)return;
+  SHEET_URL=url.trim();
+  localStorage.setItem('erp_sheet_url',SHEET_URL);
+  updateSyncBanner();
+}
+function updateSyncBanner(){
+  if(SHEET_URL){setSyncState('ok','Google Sheets connected — timestamps logging to Sheet');}
+  else{setSyncState('','Not configured — click ⚙️ Sheet Setup in sidebar');}
+}
+
+// ── EXCEL EXPORT ───────────────────────────────────────
+function downloadLogExcel(){
+  if(!AL||!AL.length){alert('No activity logged yet.');return;}
+  const COLS=['Timestamp (UTC)','Timestamp (UAE)','Action','Role','Task','Details','Employee ID','Task ID','Checklist ID','Checklist Name','Session ID'];
+  const rows=AL.map(e=>{const r={};COLS.forEach(c=>{r[c]=e[c]||'';});return r;});
+  const wb=XLSX.utils.book_new();
+  const now=new Date();
+  const uae=new Date(now.getTime()+4*3600000).toISOString().replace('T',' ').substring(0,19)+' UAE';
+  const emp=CU?CU.emp:'N/A'; const role=CU?CU.role:'N/A';
+  const meta=[['AEROGULF SERVICES','','','','','','','','','',''],
+    ['Emergency Response Plan — Activity Log','','','','','','','','','',''],
+    ['Exported by: Employee #'+emp,'','Role: '+role,'','','','','','','',''],
+    ['Export Time (UAE): '+uae,'','','','','','','','','',''],['','','','','','','','','','','']];
+  const ws=XLSX.utils.aoa_to_sheet(meta);
+  XLSX.utils.sheet_add_json(ws,rows,{origin:'A6',header:COLS});
+  ws['!cols']=[{wch:22},{wch:22},{wch:18},{wch:34},{wch:55},{wch:40},{wch:12},{wch:12},{wch:14},{wch:36},{wch:44}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}];
+  XLSX.utils.book_append_sheet(wb,ws,'ERP Activity Log');
+  XLSX.writeFile(wb,'Aerogulf_ERP_Log_'+emp+'_'+now.toISOString().split('T')[0]+'.xlsx');
+}
+
+// ── INIT ───────────────────────────────────────────────
+updateSyncBanner();
+if(CU){
+  document.getElementById('foot-name').textContent='Employee #'+CU.emp;
+  document.getElementById('foot-role').textContent=CU.role;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  buildSidebar();
+}
+</script>
+</body>
+</html>

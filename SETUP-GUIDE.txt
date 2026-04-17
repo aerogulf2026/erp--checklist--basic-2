@@ -1,0 +1,196 @@
+╔══════════════════════════════════════════════════════════════╗
+║  AEROGULF SMART ERP — SETUP GUIDE                            ║
+║  Stack: Vercel (host) + Google Sheets (database) + Power BI  ║
+╚══════════════════════════════════════════════════════════════╝
+
+WHAT YOU HAVE
+─────────────
+  index.html           → the complete ERP app
+  google-apps-script.js → paste into Google Sheets Apps Script
+  SETUP-GUIDE.txt      → this file
+
+COLUMNS STORED IN THE SHEET
+────────────────────────────
+  Timestamp (UTC)    exact UTC time of the action
+  Timestamp (UAE)    same time in UAE local (UTC+4)
+  Action             Login / Checklist Started / Task Completed /
+                     Task Undone / Note Added
+  Role               the role selected at login
+  Task               task ID + full task text
+  Details            extra context for the action
+  Employee ID        the number entered at login
+  Task ID            e.g. 4.2-7
+  Checklist ID       e.g. 4.2
+  Checklist Name     e.g. Initial Accident/Incident Response
+  Session ID         unique ID for each checklist session
+
+════════════════════════════════════════════════════════════════
+PART 1 — DEPLOY TO VERCEL (5 minutes, completely free)
+════════════════════════════════════════════════════════════════
+
+STEP 1 — Create a Vercel account
+  Go to vercel.com → click "Sign Up" → use your email or
+  sign in with Google/GitHub (no GitHub needed)
+
+STEP 2 — Deploy the app
+  Option A — Drag and drop (easiest, no account needed for GitHub)
+  ───────────────────────────────────────────────────────────────
+  1. Go to vercel.com/new
+  2. Click "Deploy without Git"  (or drag-and-drop zone)
+  3. Drag your index.html file into the upload area
+  4. Vercel gives you a URL like:
+       https://erp-aerogulf.vercel.app
+  Done.
+
+  Option B — Via Vercel CLI
+  ─────────────────────────
+  1. Install Node.js from nodejs.org
+  2. Open a terminal / command prompt
+  3. Run: npm install -g vercel
+  4. Navigate to the folder containing index.html
+  5. Run: vercel
+  6. Follow the prompts (press Enter for all defaults)
+  7. Your URL appears at the end
+
+STEP 3 — Test it
+  Open the URL Vercel gave you. The ERP app loads immediately.
+  You will see a yellow bar at the top saying Sheet is not
+  configured — that is normal, fix it in Part 2.
+
+════════════════════════════════════════════════════════════════
+PART 2 — SET UP GOOGLE SHEETS DATABASE (10 minutes, free)
+════════════════════════════════════════════════════════════════
+
+STEP 4 — Create the Google Sheet
+  1. Go to sheets.google.com
+  2. Click the big "+" to create a new blank spreadsheet
+  3. Name it: Aerogulf ERP Activity Log
+
+STEP 5 — Open Apps Script
+  Inside the Sheet: Extensions → Apps Script
+  Delete the existing code (select all, delete)
+
+STEP 6 — Paste the script
+  Copy the entire contents of google-apps-script.js
+  Paste it into the Apps Script editor
+  Click the Save button (💾 or Ctrl+S)
+
+STEP 7 — Deploy as a Web App
+  1. Click "Deploy" (top right) → "New deployment"
+  2. Click the ⚙️ gear icon next to "Select type"
+  3. Choose "Web App"
+  4. Set these values:
+       Description:      ERP Logger
+       Execute as:       Me
+       Who has access:   Anyone
+  5. Click "Deploy"
+  6. Google asks you to authorize — click through the screens
+     (you may see a "Google hasn't verified this app" warning —
+     click "Advanced" then "Go to ERP Logger (unsafe)")
+  7. Copy the Web App URL shown at the end
+     It looks like:
+       https://script.google.com/macros/s/AKfyc.../exec
+
+STEP 8 — Connect the app to the Sheet
+  1. Open your Vercel URL
+  2. Log in with any employee number
+  3. In the left sidebar click "⚙️ Sheet Setup"
+  4. Paste the Web App URL from Step 7
+  5. Click OK
+  6. The yellow bar changes to green: "Google Sheets connected"
+
+STEP 9 — Verify it works
+  1. Select any checklist and tick a task
+  2. Open your Google Sheet
+  3. A new row appears with all 11 columns filled in
+  4. The Action cell is colour-coded automatically
+
+════════════════════════════════════════════════════════════════
+PART 3 — CONNECT POWER BI FOR REPORTING (10 minutes)
+════════════════════════════════════════════════════════════════
+
+Power BI reads directly from your Google Sheet.
+Power BI Desktop is free to download and use.
+
+STEP 10 — Download Power BI Desktop
+  Go to: microsoft.com/en-us/power-bi/desktop
+  Click "Download free" and install it
+
+STEP 11 — Connect to your Sheet
+  1. Open Power BI Desktop
+  2. Click "Get data" → "More…"
+  3. Search for "Google Sheets" → click Connect
+  4. Paste the URL of your Google Sheet (not the Apps Script URL,
+     the Sheet URL from your browser address bar)
+  5. Click OK → sign in with your Google account
+  6. In the Navigator, tick the "ERP Log" tab
+  7. Click "Load"
+
+STEP 12 — Create your views
+
+  TIMESTAMP VIEW (when did things happen?)
+  ─────────────────────────────────────────
+  1. Click "New visual" → choose "Table"
+  2. Add columns: Timestamp (UAE), Employee ID, Action, Role, Task
+  3. Sort by Timestamp descending
+  4. This shows every event in chronological order
+
+  EMPLOYEE ACTIVITY (who did what?)
+  ───────────────────────────────────
+  1. New visual → Bar chart
+  2. Y-axis: Employee ID
+  3. X-axis: Count of Action
+  4. Filter to Action = "Task Completed"
+  5. Shows who completed the most tasks
+
+  CHECKLIST PROGRESS (completion rates)
+  ───────────────────────────────────────
+  1. New visual → Donut chart
+  2. Legend: Action
+  3. Values: Count of Action
+  4. Filter to Action contains "Task"
+  5. Shows completed vs undone ratio
+
+  DATE FILTER (filter by incident date)
+  ───────────────────────────────────────
+  1. New visual → Slicer
+  2. Field: Timestamp (UTC)
+  3. Style: Between
+  4. Use this to filter all visuals to a specific incident date
+
+STEP 13 — Refresh data
+  Click "Refresh" in Power BI any time to pull latest Sheet data.
+  Or set up scheduled refresh in Power BI Service (cloud version)
+  for automatic daily updates.
+
+════════════════════════════════════════════════════════════════
+PART 4 — SHARE WITH YOUR TEAM
+════════════════════════════════════════════════════════════════
+
+SHARING THE APP
+  Send your team this URL: https://your-app.vercel.app
+  Or pin it as a tab in Microsoft Teams:
+    Teams → channel → + → Website → paste URL
+
+SHARING THE POWER BI REPORT
+  Free option: Export as PDF → Email it
+  M365 option: Publish to Power BI Service → share the link
+  (Power BI Pro licence required for sharing live reports,
+   approx $10/user/month, or included in some M365 plans)
+
+SHARING THE RAW DATA
+  Simply share the Google Sheet with your manager or safety team.
+  They can filter, sort, and download to Excel at any time.
+  Sheet URL: the URL in your browser when the Sheet is open.
+
+════════════════════════════════════════════════════════════════
+SUMMARY
+════════════════════════════════════════════════════════════════
+
+  Hosting:      Vercel      free forever
+  Database:     Google Sheets   free forever
+  Reporting:    Power BI Desktop  free to use
+  Sharing PBI:  Power BI Service  $10/user/month (optional)
+  Access:       Browser on any device, or Teams tab
+
+  Total cost for core setup: $0
