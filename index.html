@@ -246,6 +246,48 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
 .log-emp{color:var(--gray5);margin-top:2px;}
 .log-sheet{font-size:9px;color:#22c55e;margin-top:2px;}
 .log-sheet.local{color:var(--gray3);}
+
+  /* --- RESPONSIVE LAYOUT FIX --- */
+
+/* Desktop View (Screens wider than 768px) */
+@media (min-width: 769px) {
+  #app-screen {
+    max-width: 1000px; /* Centers the app and prevents it from being too wide */
+    margin: 0 auto;
+    padding: 40px;
+  }
+  .checklist-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Shows two columns of tasks on desktop */
+    gap: 20px;
+  }
+}
+
+/* Mobile View (Screens 768px and smaller) */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  #login-screen, #app-screen {
+    padding: 15px; /* Thinner padding to fit phone screens */
+  }
+  #app-screen {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .header-logo {
+    width: 120px; /* Smaller logo for mobile */
+  }
+  .checklist-card {
+    margin-bottom: 10px;
+    font-size: 16px; /* Larger text/buttons for easier tapping */
+  }
+  button, input[type="button"] {
+    width: 100%; /* Full-width buttons on mobile for easier thumb access */
+    height: 48px;
+  }
+}
 </style>
 </head>
 <body>
