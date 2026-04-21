@@ -731,6 +731,14 @@ async function confirmSubmit(){
   saveLocal();
   await logEntry('Checklist Submitted',CR.id+' – '+CR.name,
     'Submitted by Emp #'+CU.emp+' | '+done.length+'/'+all.length+' tasks ('+pct+'%) | Session: '+SID,'');
+
+  // ── INSTANT RESET: clear task state and start a fresh session ──
+  TS={};
+  SS=new Date().toISOString();
+  SID=CU.emp+'_'+CR.id+'_'+SS;   // new unique session ID
+  saveLocal();
+  // ───────────────────────────────────────────────────────────────
+
   renderChecklist(); buildSidebar();
 }
 
