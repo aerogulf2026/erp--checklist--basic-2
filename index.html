@@ -203,6 +203,7 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
 
 /* SUBMIT CONFIRM MODAL */
 #submit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:300;}
+#sp-modal-bg.open{display:flex;}
 #submit-modal-bg.open{display:flex;}
 .submit-modal{background:var(--white);border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 70px rgba(0,0,0,.3);overflow:hidden;}
 .sm-head{background:var(--navy);padding:18px 22px;color:#fff;}
@@ -311,7 +312,7 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
       <div class="res-label">Resources</div>
       <button class="res-btn red" onclick="window.open('https://login.live.com','_blank')">📹 EMERGENCY 24/7 CMC</button>
       <button class="res-btn" onclick="openLog()">📋 Activity Log</button>
-      <button class="res-btn" onclick="openSheetConfig()">⚙️ Sheet Setup</button>
+      <button class="res-btn" onclick="openSheetConfig()">⚙️ SharePoint Setup</button>
     </div>
     <div class="sb-foot">
       <div class="foot-lbl">Active User:</div>
@@ -402,6 +403,40 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
   </div>
 </div>
 
+<!-- SHAREPOINT SETUP MODAL -->
+<div id="sp-modal-bg" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:400;">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:500px;box-shadow:0 20px 70px rgba(0,0,0,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;">
+    <div style="background:#003399;padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:15px;font-weight:700;">⚙️ SharePoint / OneDrive Setup</div>
+        <div style="font-size:11px;color:#a8c0ff;margin-top:3px;">Connect to your Excel log via Power Automate</div>
+      </div>
+      <button onclick="closeSheetConfig()" style="background:none;border:none;color:#a8c0ff;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:20px 22px;">
+      <div style="background:#eef3ff;border:1px solid #c7d8ff;border-radius:8px;padding:12px 14px;font-size:12px;color:#003399;margin-bottom:16px;line-height:1.6;">
+        <strong>How to get your Power Automate URL:</strong><br>
+        1. Open <strong>Power Automate</strong> → Create → Instant cloud flow<br>
+        2. Trigger: <em>"When an HTTP request is received"</em><br>
+        3. Action: <em>"Add a row into a table"</em> → select your OneDrive/SharePoint Excel file<br>
+        4. Save &amp; copy the <strong>HTTP POST URL</strong> generated<br>
+        5. Paste it below
+      </div>
+      <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Power Automate HTTP POST URL</label>
+      <input id="sp-url-input" type="text"
+        placeholder="https://prod-xx.westeurope.logic.azure.com:443/workflows/..."
+        style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;color:#0f172a;font-family:inherit;"
+        onfocus="this.style.borderColor='#003399'" onblur="this.style.borderColor='#e2e8f0'"/>
+      <div style="font-size:11px;color:#64748b;margin-top:6px;">This URL is saved only in your browser. Nothing is sent to Aerogulf servers.</div>
+    </div>
+    <div style="padding:10px 22px 18px;display:flex;gap:8px;">
+      <button onclick="saveSheetConfig()" style="flex:1;padding:10px;background:#1a7a3a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✓ Save URL</button>
+      <button onclick="clearSheetConfig()" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:none;font-size:13px;cursor:pointer;color:#cc2200;">🗑 Remove</button>
+      <button onclick="closeSheetConfig()" style="padding:10px 16px;border:1px solid #e2e8f0;border-radius:8px;background:none;font-size:13px;cursor:pointer;color:#64748b;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOG PANEL -->
 <div id="log-panel">
   <div class="log-drawer">
@@ -417,15 +452,24 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
 </div>
 
 <script>
-// ── SHEETS CONFIG ──────────────────────────────────────
+// ── SHAREPOINT / ONEDRIVE CONFIG ───────────────────────
 let SHEET_URL = localStorage.getItem('erp_sheet_url') || '';
+
 async function logToSheet(row) {
   if (!SHEET_URL) return false;
-  setSyncState('busy','Saving to Google Sheets…');
+  setSyncState('busy','Saving to SharePoint Excel…');
   try {
-    await fetch(SHEET_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});
-    setSyncState('ok','Saved to Google Sheets ✓'); return true;
-  } catch(e){ setSyncState('err','Sheet save failed — saved locally'); return false; }
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row)
+    });
+    setSyncState('ok','Saved to SharePoint Excel ✓');
+    return true;
+  } catch(e) {
+    setSyncState('err','SharePoint save failed — saved locally');
+    return false;
+  }
 }
 function setSyncState(s,m){ document.getElementById('sync-dot').className='sync-dot '+s; document.getElementById('sync-msg').textContent=m; }
 
@@ -732,12 +776,12 @@ async function confirmSubmit(){
   await logEntry('Checklist Submitted',CR.id+' – '+CR.name,
     'Submitted by Emp #'+CU.emp+' | '+done.length+'/'+all.length+' tasks ('+pct+'%) | Session: '+SID,'');
 
-  // ── INSTANT RESET: clear task state and start a fresh session ──
+  // ── INSTANT RESET: clear tasks and open a brand-new session ──
   TS={};
   SS=new Date().toISOString();
-  SID=CU.emp+'_'+CR.id+'_'+SS;   // new unique session ID
+  SID=CU.emp+'_'+CR.id+'_'+SS;
   saveLocal();
-  // ───────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
 
   renderChecklist(); buildSidebar();
 }
@@ -777,14 +821,14 @@ function doLogin(){
 }
 function doLogout(){
   CU=null;CR=null;
+  localStorage.removeItem('erp3_user'); // clear saved session so login is always fresh
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('app').classList.add('hidden');
   document.getElementById('i-emp').value='';
   document.getElementById('i-role').value='';
   showWelcome();
 }
-const _saved=localStorage.getItem('erp3_user');
-if(_saved){CU=JSON.parse(_saved);document.getElementById('i-emp').value=CU.emp;document.getElementById('i-role').value=CU.role;}
+// Do NOT auto-restore user — always show login screen fresh on load
 
 // ── SIDEBAR ────────────────────────────────────────────
 function buildSidebar(){
@@ -956,17 +1000,30 @@ function renderLog(){
   }).join('');
 }
 
-// ── SHEET CONFIG ───────────────────────────────────────
+// ── SHAREPOINT URL CONFIG ──────────────────────────────
 function openSheetConfig(){
-  const url=prompt('Paste your Google Apps Script Web App URL.\n\nFormat: https://script.google.com/macros/s/.../exec',SHEET_URL);
-  if(url===null)return;
-  SHEET_URL=url.trim();
-  localStorage.setItem('erp_sheet_url',SHEET_URL);
+  document.getElementById('sp-modal-bg').classList.add('open');
+  document.getElementById('sp-url-input').value = SHEET_URL || '';
+}
+function closeSheetConfig(){ document.getElementById('sp-modal-bg').classList.remove('open'); }
+function saveSheetConfig(){
+  const url = document.getElementById('sp-url-input').value.trim();
+  if(!url){ alert('Please paste a valid Power Automate URL.'); return; }
+  SHEET_URL = url;
+  localStorage.setItem('erp_sheet_url', SHEET_URL);
   updateSyncBanner();
+  closeSheetConfig();
+}
+function clearSheetConfig(){
+  if(!confirm('Remove the saved SharePoint URL?')) return;
+  SHEET_URL='';
+  localStorage.removeItem('erp_sheet_url');
+  updateSyncBanner();
+  closeSheetConfig();
 }
 function updateSyncBanner(){
-  if(SHEET_URL){setSyncState('ok','Google Sheets connected — timestamps logging to Sheet');}
-  else{setSyncState('','Not configured — click ⚙️ Sheet Setup in sidebar');}
+  if(SHEET_URL){ setSyncState('ok','SharePoint Excel connected — logging active'); }
+  else{ setSyncState('','Not configured — click ⚙️ SharePoint Setup in sidebar'); }
 }
 
 // ── EXCEL EXPORT ───────────────────────────────────────
@@ -991,14 +1048,8 @@ function downloadLogExcel(){
 }
 
 // ── INIT ───────────────────────────────────────────────
+// Always start at login screen — no auto-login on reload
 updateSyncBanner();
-if(CU){
-  document.getElementById('foot-name').textContent='Employee #'+CU.emp;
-  document.getElementById('foot-role').textContent=CU.role;
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  buildSidebar();
-}
 </script>
 </body>
 </html>
