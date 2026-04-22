@@ -717,10 +717,11 @@ function saveLocal(){
 }
 function loadLocal(){
   const d=SID&&localStorage.getItem('erp3_'+SID);
-  if(d){const p=JSON.parse(d);TS=p.TS||{};AL=p.AL||[];SS=p.SS||null;if(p.sub)SUBMITTED[SID]=p.sub;}
+  if(d){const p=JSON.parse(d);TS=p.TS||{};AL=p.AL||[];SS=p.SS||null;
+    // Never restore submitted lock — always allow re-editing
+  }
   else{TS={};AL=[];SS=null;}
 }
-
 // ── SUBMIT BUTTON ──────────────────────────────────────
 function updateSubmitBtn(){
   const btn=document.getElementById('submit-btn');
@@ -862,13 +863,16 @@ function toggleCat(n){expanded[n]=!expanded[n];buildSidebar();}
 // ── SELECT CHECKLIST ───────────────────────────────────
 async function selRole(ci,ri){
   CR=ERP[ci].roles[ri]; CC=ERP[ci].cat;
-  SID=makeSID(CU.emp,CR.id);
-  loadLocal();
-  if(!SS)SS=new Date().toISOString();
+  // Always generate a fresh session ID — never reuse a previous submitted one
+  SS=new Date().toISOString();
+  SID=CU.emp+'_'+CR.id+'_'+SS;
+  TS={};
+  AL=[];
+  // Do NOT call loadLocal() — always start clean so checklist is editable
+  if(window.innerWidth<=768) closeSidebar();
   buildSidebar(); renderChecklist();
   await logEntry('Checklist Started',CR.name,'Session '+SID+' opened','');
 }
-
 function showWelcome(){
   document.getElementById('welcome').style.display='flex';
   document.getElementById('cl-view').style.display='none';
