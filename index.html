@@ -15,8 +15,8 @@
   --gray3:#cbd5e1; --gray5:#64748b; --gray7:#334155; --gray9:#0f172a;
   --white:#ffffff; --radius:8px;
 }
-html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--gray9);background:var(--gray0);}
-#login-screen{position:fixed;inset:0;background:var(--gray1);display:flex;align-items:center;justify-content:center;z-index:100;}
+html,body{min-height:100%;height:auto;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--gray9);background:var(--gray0);}
+#login-screen{position:fixed;inset:0;width:100%;height:100%;background:var(--gray1);display:flex;align-items:center;justify-content:center;z-index:100;}
 #login-screen.hidden{display:none;}
 .login-card{background:var(--white);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.14);width:100%;max-width:420px;overflow:hidden;}
 .login-head{background:#ffffff;padding:28px 32px;text-align:center;color:#fff;}
@@ -33,7 +33,7 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
 .btn-primary:hover{background:var(--navy2);}
 .err-box{color:#cc2200;font-size:12px;margin-bottom:10px;padding:8px 10px;background:#fff0ee;border-radius:6px;border:1px solid #ffcccc;display:none;}
 .login-note{text-align:center;font-size:11px;color:var(--gray5);margin-top:12px;line-height:1.5;}
-#app{display:flex;height:100vh;overflow:hidden;}
+#app{display:flex;height:100vh;min-height:600px;overflow:hidden;}
 #app.hidden{display:none;}
 #sidebar{width:264px;background:var(--white);border-right:1px solid var(--gray2);display:flex;flex-direction:column;height:100%;flex-shrink:0;overflow:hidden;}
 .sb-logo{padding:13px 16px 11px;border-bottom:1px solid var(--gray2);flex-shrink:0;}
@@ -452,6 +452,19 @@ label.field-label{font-size:12px;font-weight:600;color:var(--gray7);margin-botto
 </div>
 
 <script>
+  // ── SHAREPOINT IFRAME FIX ──────────────────────────────
+// If running inside an iframe (SharePoint), break out to full window
+if(window.self !== window.top){
+  try{ window.top.location.href = window.self.location.href; }
+  catch(e){
+    // Cross-origin blocked — apply iframe-safe sizing instead
+    document.documentElement.style.height='100%';
+    document.body.style.height='100%';
+    document.body.style.overflow='auto';
+    const app=document.getElementById('app');
+    if(app){app.style.height='100%';app.style.minHeight='100vh';}
+  }
+}
 // ── SHAREPOINT / ONEDRIVE CONFIG ───────────────────────
 let SHEET_URL = localStorage.getItem('erp_sheet_url') || '';
 
